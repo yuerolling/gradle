@@ -32,7 +32,6 @@ import org.gradle.internal.FileUtils;
 import org.gradle.internal.SystemProperties;
 import org.gradle.internal.classloader.FilteringClassLoader;
 import org.gradle.internal.jvm.GroovyJpmsWorkarounds;
-import org.gradle.internal.jvm.Jvm;
 import org.gradle.internal.jvm.inspection.JvmVersionDetector;
 import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.process.JavaForkOptions;
@@ -74,7 +73,6 @@ public class DaemonGroovyCompiler extends AbstractDaemonCompiler<GroovyJavaJoint
         Collection<File> antFiles = classPathRegistry.getClassPath("ANT").getAsFiles();
         Iterable<File> targetGroovyFiles = Iterables.concat(spec.getGroovyClasspath(), antFiles);
 
-        // TODO We should infer a minimal classpath from delegate instead
         Collection<File> languageGroovyFiles = classPathRegistry.getClassPath("GROOVY-COMPILER").getAsFiles();
 
         // Additional stuff the Groovy compiler needs
@@ -83,6 +81,7 @@ public class DaemonGroovyCompiler extends AbstractDaemonCompiler<GroovyJavaJoint
             public void execute(FilteringClassLoader.Spec spec) {
                 // File Collections
                 spec.allowPackage("org.gradle.api.file");
+                spec.allowPackage("org.gradle.api.internal.file");
                 // Process API
                 spec.allowPackage("org.gradle.process");
                 spec.allowPackage("org.gradle.internal.process");

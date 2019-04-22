@@ -16,8 +16,10 @@
 
 package org.gradle.play.internal.toolchain
 
+import org.gradle.api.internal.ClassPathRegistry
 import org.gradle.api.internal.file.TestFiles
 import org.gradle.api.tasks.compile.BaseForkOptions
+import org.gradle.internal.classpath.ClassPath
 import org.gradle.language.base.internal.compile.Compiler
 import org.gradle.play.internal.spec.PlayCompileSpec
 import org.gradle.workers.internal.WorkerDaemonFactory
@@ -27,6 +29,7 @@ class DaemonPlayCompilerTest extends Specification {
 
     def workingDirectory = new File(".").absoluteFile
     def delegate = Mock(Compiler)
+    def classpathRegistry = Mock(ClassPathRegistry)
     def workerDaemonFactory = Mock(WorkerDaemonFactory)
     def spec = Mock(PlayCompileSpec)
     def forkOptions = Mock(BaseForkOptions)
@@ -35,23 +38,24 @@ class DaemonPlayCompilerTest extends Specification {
     def setup(){
         _ * spec.getForkOptions() >> forkOptions
         _ * forkOptions.jvmArgs >> []
+        _ * classpathRegistry.getClassPath(_) >> Stub(ClassPath)
     }
 
     def "passes compile classpath and packages to daemon options"() {
         given:
         def classpath = someClasspath()
         def packages = ["foo", "bar"]
-        def compiler = new DaemonPlayCompiler(workingDirectory, delegate, workerDaemonFactory, classpath, packages, forkOptionsFactory)
+        def compiler = new DaemonPlayCompiler(workingDirectory, delegate, classpathRegistry, workerDaemonFactory, classpath, packages, forkOptionsFactory)
         when:
         def daemonForkOptions = compiler.toDaemonForkOptions(spec)
         then:
-        daemonForkOptions.getClasspath() == classpath
-        daemonForkOptions.getSharedPackages() == packages
+        daemonForkOptions.getClassLoaderStructure().parent.spec.packageNames.containsAll(packages)
+        daemonForkOptions.getClassLoaderStructure().parent.parent.spec.classpath.containsAll(classpath.collect {it.toURI().toURL()})
     }
 
     def "applies fork settings to daemon options"(){
         given:
-        def compiler = new DaemonPlayCompiler(workingDirectory, delegate, workerDaemonFactory, someClasspath(), [], forkOptionsFactory)
+        def compiler = new DaemonPlayCompiler(workingDirectory, delegate, classpathRegistry, workerDaemonFactory, someClasspath(), [], forkOptionsFactory)
         when:
         1 * forkOptions.getMemoryInitialSize() >> "256m"
         1 * forkOptions.getMemoryMaximumSize() >> "512m"
@@ -62,6 +66,6 @@ class DaemonPlayCompilerTest extends Specification {
     }
 
     def someClasspath() {
-        [Mock(File), Mock(File)]
+        [new File("foo.jar"), new File("bar.jar")]
     }
 }
