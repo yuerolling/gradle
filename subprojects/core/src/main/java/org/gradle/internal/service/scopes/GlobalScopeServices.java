@@ -92,6 +92,7 @@ import org.gradle.model.internal.manage.schema.extract.ModelSchemaAspectExtracti
 import org.gradle.model.internal.manage.schema.extract.ModelSchemaAspectExtractor;
 import org.gradle.model.internal.manage.schema.extract.ModelSchemaExtractionStrategy;
 import org.gradle.model.internal.manage.schema.extract.ModelSchemaExtractor;
+import org.gradle.process.internal.health.memory.DefaultJvmMemoryInfo;
 import org.gradle.process.internal.health.memory.DefaultMemoryManager;
 import org.gradle.process.internal.health.memory.DefaultOsMemoryInfo;
 import org.gradle.process.internal.health.memory.JvmMemoryInfo;
@@ -230,6 +231,10 @@ public class GlobalScopeServices extends WorkerSharedGlobalScopeServices {
 
     GradleUserHomeScopeServiceRegistry createGradleUserHomeScopeServiceRegistry(ServiceRegistry globalServices) {
         return new DefaultGradleUserHomeScopeServiceRegistry(globalServices, new GradleUserHomeScopeServices(globalServices));
+    }
+
+    JvmMemoryInfo createJvmMemoryInfo() {
+        return new DefaultJvmMemoryInfo();
     }
 
     OsMemoryInfo createOsMemoryInfo() {

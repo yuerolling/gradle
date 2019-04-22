@@ -17,8 +17,6 @@ package org.gradle.api.internal.tasks.compile.daemon;
 
 import com.google.common.collect.Lists;
 import org.gradle.api.Action;
-import org.gradle.api.InvalidUserDataException;
-import org.gradle.api.JavaVersion;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -26,18 +24,14 @@ import org.gradle.api.tasks.WorkResult;
 import org.gradle.api.tasks.WorkResults;
 import org.gradle.api.tasks.compile.BaseForkOptions;
 import org.gradle.internal.Actions;
-import org.gradle.internal.Factory;
-import org.gradle.internal.SystemProperties;
 import org.gradle.internal.UncheckedException;
 import org.gradle.internal.classloader.FilteringClassLoader;
 import org.gradle.internal.classloader.VisitableURLClassLoader;
 import org.gradle.internal.classpath.DefaultClassPath;
-import org.gradle.internal.jvm.Jvm;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.internal.compile.CompileSpec;
 import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.language.base.internal.compile.RequiresServices;
-import org.gradle.util.GFileUtils;
 import org.gradle.workers.internal.ClassLoaderStructure;
 import org.gradle.workers.internal.DaemonForkOptions;
 import org.gradle.workers.internal.DefaultWorkResult;
@@ -150,6 +144,7 @@ public abstract class AbstractDaemonCompiler<T extends CompileSpec> implements C
 
         @Override
         public WorkResult call() throws Exception {
+            // TODO: Pass in the compiler class and instantiate it with injected services instead of this hack
             if (compileSpec instanceof RequiresServices) {
                 ((RequiresServices) compileSpec).setServiceRegistry(serviceRegistry);
             }

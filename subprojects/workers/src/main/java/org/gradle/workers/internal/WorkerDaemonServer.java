@@ -18,19 +18,24 @@ package org.gradle.workers.internal;
 
 import org.gradle.initialization.ClassLoaderRegistry;
 import org.gradle.internal.Cast;
+import org.gradle.internal.service.DefaultServiceRegistry;
 import org.gradle.internal.service.ServiceRegistry;
+import org.gradle.internal.service.ServiceRegistryBuilder;
+import org.gradle.internal.service.scopes.WorkerSharedGlobalScopeServices;
 
 import javax.inject.Inject;
 
 public class WorkerDaemonServer implements WorkerProtocol {
-    private final ClassLoaderRegistry classLoaderRegistry;
     private final ServiceRegistry serviceRegistry;
     private Worker isolatedClassloaderWorker;
 
     @Inject
     public WorkerDaemonServer(ServiceRegistry serviceRegistry) {
-        this.serviceRegistry = serviceRegistry;
-        this.classLoaderRegistry = serviceRegistry.get(ClassLoaderRegistry.class);
+        ServiceRegistry workerSharedGlobalServices = ServiceRegistryBuilder.builder()
+                .parent(serviceRegistry)
+                .provider(new WorkerSharedGlobalScopeServices())
+                .build();
+        this.serviceRegistry = new WorkerDaemonServices(workerSharedGlobalServices);
     }
 
     @Override
@@ -47,6 +52,7 @@ public class WorkerDaemonServer implements WorkerProtocol {
     private Worker getIsolatedClassloaderWorker(ClassLoaderStructure classLoaderStructure) {
         // We can reuse the classloader worker as the ClassLoaderStructure should not change in between invocations
         if (isolatedClassloaderWorker == null) {
+            ClassLoaderRegistry classLoaderRegistry = serviceRegistry.get(ClassLoaderRegistry.class);
             isolatedClassloaderWorker = new IsolatedClassloaderWorker(classLoaderStructure, classLoaderRegistry.getPluginsClassLoader(), serviceRegistry, true);
         }
         return isolatedClassloaderWorker;
@@ -55,5 +61,15 @@ public class WorkerDaemonServer implements WorkerProtocol {
     @Override
     public String toString() {
         return "WorkerDaemonServer{}";
+    }
+
+    private static class WorkerDaemonServices extends DefaultServiceRegistry {
+        public WorkerDaemonServices(ServiceRegistry... parents) {
+            super(parents);
+        }
+
+        WorkerDaemonServices createWorkerDaemonServices() {
+            return this;
+        }
     }
 }

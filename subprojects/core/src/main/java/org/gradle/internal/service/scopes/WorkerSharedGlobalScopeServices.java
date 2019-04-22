@@ -45,8 +45,6 @@ import org.gradle.internal.operations.DefaultBuildOperationIdFactory;
 import org.gradle.internal.reflect.DirectInstantiator;
 import org.gradle.internal.time.Clock;
 import org.gradle.internal.time.Time;
-import org.gradle.process.internal.health.memory.DefaultJvmMemoryInfo;
-import org.gradle.process.internal.health.memory.JvmMemoryInfo;
 
 public class WorkerSharedGlobalScopeServices extends BasicGlobalScopeServices {
 
@@ -58,10 +56,6 @@ public class WorkerSharedGlobalScopeServices extends BasicGlobalScopeServices {
 
     public WorkerSharedGlobalScopeServices(ClassPath additionalModuleClassPath) {
         this.additionalModuleClassPath = additionalModuleClassPath;
-    }
-
-    JvmMemoryInfo createJvmMemoryInfo() {
-        return new DefaultJvmMemoryInfo();
     }
 
     ClassPathRegistry createClassPathRegistry(ModuleRegistry moduleRegistry, PluginModuleRegistry pluginModuleRegistry) {

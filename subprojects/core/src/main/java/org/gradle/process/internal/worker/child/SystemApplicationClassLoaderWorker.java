@@ -20,7 +20,9 @@ import org.gradle.api.Action;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.initialization.GradleUserHomeDirProvider;
 import org.gradle.internal.UncheckedException;
+import org.gradle.internal.concurrent.DefaultExecutorFactory;
 import org.gradle.internal.concurrent.ExecutorFactory;
+import org.gradle.internal.event.DefaultListenerManager;
 import org.gradle.internal.event.ListenerManager;
 import org.gradle.internal.io.ClassLoaderObjectInputStream;
 import org.gradle.internal.logging.LoggingManagerInternal;
@@ -36,7 +38,7 @@ import org.gradle.internal.serialize.InputStreamBackedDecoder;
 import org.gradle.internal.service.DefaultServiceRegistry;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.internal.service.ServiceRegistryBuilder;
-import org.gradle.internal.service.scopes.WorkerSharedGlobalScopeServices;
+import org.gradle.process.internal.health.memory.DefaultJvmMemoryInfo;
 import org.gradle.process.internal.health.memory.DefaultMemoryManager;
 import org.gradle.process.internal.health.memory.DisabledOsMemoryInfo;
 import org.gradle.process.internal.health.memory.JvmMemoryInfo;
@@ -95,14 +97,14 @@ public class SystemApplicationClassLoaderWorker implements Callable<Void> {
 
         // Read server address and start connecting
         MultiChoiceAddress serverAddress = new MultiChoiceAddressSerializer().read(decoder);
-        NativeServices.initialize(gradleUserHomeDir);
-        final ServiceRegistry globalServices = ServiceRegistryBuilder.builder()
+        NativeServices.initialize(gradleUserHomeDir, false);
+        MessagingServices messagingServices = new MessagingServices();
+        final ServiceRegistry basicWorkerServices = ServiceRegistryBuilder.builder()
                 .parent(NativeServices.getInstance())
                 .parent(loggingServiceRegistry)
-                .provider(new WorkerSharedGlobalScopeServices())
+                .parent(messagingServices)
                 .build();
-        final ServiceRegistry workerServices = new WorkerServices(globalServices, gradleUserHomeDir);
-        MessagingServices messagingServices = workerServices.get(MessagingServices.class);
+        final ServiceRegistry workerServices = new WorkerServices(basicWorkerServices, gradleUserHomeDir);
 
         ObjectConnection connection = null;
         WorkerLogEventListener workerLogEventListener = null;
@@ -228,6 +230,18 @@ public class SystemApplicationClassLoaderWorker implements Callable<Void> {
                     };
                 }
             });
+        }
+
+        ListenerManager createListenerManager() {
+            return new DefaultListenerManager();
+        }
+
+        ExecutorFactory createExecutorFactory() {
+            return new DefaultExecutorFactory();
+        }
+
+        JvmMemoryInfo createJvmMemoryInfo() {
+            return new DefaultJvmMemoryInfo();
         }
 
         OsMemoryInfo createOsMemoryInfo() {
