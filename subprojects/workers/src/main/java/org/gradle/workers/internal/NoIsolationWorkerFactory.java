@@ -16,6 +16,7 @@
 
 package org.gradle.workers.internal;
 
+import org.gradle.internal.classloader.MultiParentClassLoader;
 import org.gradle.internal.instantiation.InstantiatorFactory;
 import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.operations.BuildOperationRef;
@@ -56,7 +57,8 @@ public class NoIsolationWorkerFactory implements WorkerFactory {
                         try {
                             WorkerProtocol workerServer = new DefaultWorkerServer(actionInstantiator);
                             // TODO This should use the isolation framework instead to isolate parameters.
-                            ActionExecutionSpec effectiveSpec = new WrappedActionExecutionSpec(spec, null).unwrap(spec.getImplementationClass().getClassLoader());
+                            ClassLoader specAndWorkerClassLoader = new MultiParentClassLoader(ActionExecutionSpec.class.getClassLoader(), spec.getImplementationClass().getClassLoader());
+                            ActionExecutionSpec effectiveSpec = new WrappedActionExecutionSpec(spec, null).unwrap(specAndWorkerClassLoader);
                             result = workerServer.execute(effectiveSpec);
                         } finally {
                             //TODO the async work tracker should wait for children of an operation to finish first.
