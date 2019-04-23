@@ -93,6 +93,9 @@ public class DaemonGroovyCompiler extends AbstractDaemonCompiler<GroovyJavaJoint
                 spec.allowPackage("org.gradle.internal.classpath");
                 // Jvm
                 spec.allowPackage("org.gradle.internal.jvm");
+                //Reflection
+                spec.allowPackage("org.gradle.internal.reflect");
+                spec.allowPackage("org.gradle.api.reflect");
                 // Various classes
                 spec.allowClass(Factory.class);
                 spec.allowClass(GradleException.class);
